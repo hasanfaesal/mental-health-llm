@@ -28,3 +28,21 @@ __pycache__/
 # Large datasets (adjust path as needed)
 mental_health_counseling_conversations/*.csv
 mental_health_counseling_conversations/*.json
+
+# Logs and runs
+*.log
+runs/
+output/
+outputs/
+logs/
+
+# Checkpoints (if you save outside mental_health_llama_model/)
+checkpoints/
+checkpoint-*/
+
+# Env files
+.env
+.env.*
+
+# Notebooks
+.ipynb_checkpoints/
