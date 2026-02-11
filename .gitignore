@@ -1,0 +1,30 @@
+# Large model files
+*.gguf
+*.safetensors
+*.bin
+*.pth
+
+# Model directories
+mental_health_llama_model/
+gguf_model/
+llama.cpp/
+unsloth_compiled_cache/
+
+# Python virtual environment
+.venv/
+venv/
+*.pyc
+__pycache__/
+
+# Training logs (optional - remove this line if you want to commit logs)
+# *.log
+
+# UV lock file (optional - keep if you want reproducible builds)
+# uv.lock
+
+# Hugging Face cache
+.cache/
+
+# Large datasets (adjust path as needed)
+mental_health_counseling_conversations/*.csv
+mental_health_counseling_conversations/*.json

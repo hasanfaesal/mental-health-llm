@@ -1,0 +1,38 @@
+# Mental Health Llama Training Dependencies
+# Core ML and training libraries
+torch>=2.0.0
+transformers>=4.36.0
+datasets>=2.14.0
+accelerate>=0.20.0
+peft>=0.6.0
+trl>=0.7.0
+bitsandbytes>=0.41.0
+
+# Unsloth for efficient training (uv compatible)
+unsloth @ git+https://github.com/unslothai/unsloth.git
+
+# Data processing and utilities
+numpy>=1.21.0
+pandas>=1.3.0
+scikit-learn>=1.0.0
+
+# Monitoring and logging
+tensorboard>=2.10.0
+wandb>=0.13.0
+
+# Development and debugging
+ipython>=8.0.0
+jupyter>=1.0.0
+tqdm>=4.64.0
+
+# Optional: For advanced features
+scipy>=1.7.0
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# Additional dependencies for unsloth and training
+sentencepiece>=0.1.99
+protobuf>=3.20.0
+packaging>=21.0
+psutil>=5.9.0
+huggingface-hub>=0.20.0

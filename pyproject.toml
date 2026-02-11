@@ -1,0 +1,81 @@
+[project]
+name = "mental-health-llama-training"
+version = "0.1.0"
+description = "Fine-tuning Llama-3-8B on Mental Health Counseling Dataset using QLoRA"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    # Core ML and training libraries
+    "torch>=2.0.0",
+    "torchvision>=0.15.0",
+    "transformers>=4.36.0",
+    "datasets>=2.14.0",
+    "accelerate>=0.20.0",
+    "peft>=0.6.0",
+    "trl>=0.7.0",
+    "bitsandbytes>=0.41.0",
+    # Data processing and utilities
+    "numpy>=1.21.0",
+    "pandas>=1.3.0",
+    "scikit-learn>=1.0.0",
+    # Monitoring and logging
+    "tensorboard>=2.10.0",
+    "wandb>=0.13.0",
+    # Development and debugging
+    "ipython>=8.0.0",
+    "jupyter>=1.0.0",
+    "tqdm>=4.64.0",
+    # Additional dependencies
+    "sentencepiece>=0.1.99",
+    "protobuf>=3.20.0",
+    "packaging>=21.0",
+    "psutil>=5.9.0",
+    "huggingface-hub>=0.20.0",
+    # Optional: For advanced features
+    "scipy>=1.7.0",
+    "matplotlib>=3.5.0",
+    "seaborn>=0.11.0",
+    # Unsloth for efficient training
+    "unsloth @ git+https://github.com/unslothai/unsloth.git",
+    "unsloth-zoo>=2025.12.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=22.0.0",
+    "flake8>=4.0.0",
+    "mypy>=0.991",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0.0",
+    "black>=22.0.0",
+    "flake8>=4.0.0",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+include = [
+    "*.py",
+    "mental_health_counseling_conversations/*.json",
+    "README.md",
+    "requirements.txt"
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
