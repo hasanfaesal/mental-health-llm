@@ -62,9 +62,9 @@ echo "Starting training..."
 echo "====================================="
 
 # Run training with default parameters
-python3 train_mental_health_llama.py \
+python3 src/train.py \
     --model_name "unsloth/llama-3-8b-bnb-4bit" \
-    --dataset_path "mental_health_counseling_conversations/combined_dataset.json" \
+    --dataset_path "data/combined_dataset.json" \
     --output_dir "./mental_health_llama_model" \
     --max_steps 100 \
     --validation_split 0.1 \

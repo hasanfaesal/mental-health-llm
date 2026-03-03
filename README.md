@@ -1,140 +1,241 @@
-# Mental Health Llama Training
+# Mental Health LLM
 
-Fine-tune Llama-3-8B on Mental Health Counseling Dataset using QLoRA and Unsloth.
+Fine-tuning LLaMA 3 8B for mental health counseling conversations using QLoRA and Unsloth.
 
-## 🚀 Quick Start with UV
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Model on HuggingFace](https://img.shields.io/badge/Model-HuggingFace-yellow)](https://huggingface.co/hasanfaesal/mental-health-llama3-8b-lora)
+[![Base Model](https://img.shields.io/badge/Base-LLaMA%203%208B-green)](https://huggingface.co/unsloth/llama-3-8b-bnb-4bit)
+[![Dataset](https://img.shields.io/badge/Dataset-Mental%20Health%20Counseling-orange)](https://huggingface.co/datasets/Amod/mental_health_counseling_conversations)
 
-This project is optimized for the `uv` package manager for faster dependency management.
+---
+
+## Overview
+
+This project fine-tunes Meta's LLaMA 3 8B model on real-world mental health counseling
+conversations using parameter-efficient techniques. The goal is to produce a model that
+generates empathetic, contextually aware responses to mental health concerns while
+remaining small enough to run on consumer GPUs.
+
+Key decisions:
+
+- **QLoRA** (4-bit quantized LoRA) for memory-efficient fine-tuning on a single 16 GB GPU
+- **Unsloth** for 2x faster training and reduced VRAM usage
+- **LoRA rank 32** with alpha 64, targeting all attention and MLP projection layers for
+  strong adaptation without full-parameter training
+
+The trained LoRA adapter is available on [Hugging Face](https://huggingface.co/hasanfaesal/mental-health-llama3-8b-lora).
+
+## Model Architecture
+
+| Component | Details |
+|---|---|
+| Base Model | [unsloth/llama-3-8b-bnb-4bit](https://huggingface.co/unsloth/llama-3-8b-bnb-4bit) |
+| Method | QLoRA (4-bit NormalFloat quantization) |
+| LoRA Rank (r) | 32 |
+| LoRA Alpha | 64 |
+| LoRA Dropout | 0.1 |
+| Target Modules | `q_proj`, `k_proj`, `v_proj`, `o_proj`, `gate_proj`, `up_proj`, `down_proj` |
+| Max Sequence Length | 2048 tokens |
+| Optimizer | AdamW 8-bit |
+| Adapter Size | ~281 MB (safetensors) |
+
+## Training Results
+
+Training was run for 100 steps (~25% of 1 epoch) on the full dataset of 3,512 Q&A pairs
+with a 90/10 train/validation split.
+
+| Step | Epoch | Training Loss | Gradient Norm | Learning Rate |
+|------|-------|---------------|---------------|---------------|
+| 10 | 0.025 | 2.9583 | 3.240 | 9.0e-06 |
+| 20 | 0.051 | 2.8452 | 2.738 | 1.9e-05 |
+| 30 | 0.076 | 2.3345 | 1.063 | 2.9e-05 |
+| 50 | 0.127 | 2.1503 | 0.685 | 4.9e-05 |
+| 70 | 0.177 | 2.1057 | 0.795 | 6.9e-05 |
+| 100 | 0.253 | 2.0442 | 0.790 | 9.9e-05 |
+| **Eval** | **0.253** | **2.0212** | -- | -- |
+
+Loss decreased steadily from 2.96 to 2.04, with eval loss tracking closely at 2.02.
+Gradient norms stabilized around 0.7-0.8, indicating stable training. The model could
+benefit from additional training epochs.
+
+## Quick Start
+
+### Using the Trained Model
+
+Load the LoRA adapter from Hugging Face and run inference:
+
+```python
+from unsloth import FastLanguageModel
+
+model, tokenizer = FastLanguageModel.from_pretrained(
+    model_name="hasanfaesal/mental-health-llama3-8b-lora",
+    max_seq_length=2048,
+    dtype=None,
+    load_in_4bit=True,
+)
+
+FastLanguageModel.for_inference(model)
+
+prompt = """<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
+You are a compassionate and professional mental health assistant. Provide empathetic, supportive, and helpful responses while being mindful of ethical boundaries. Always encourage professional help when appropriate and never provide medical diagnoses.<|eot_id|><|start_header_id|>user<|end_header_id|>
+
+I've been feeling really anxious lately and can't sleep well.<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+
+"""
+
+inputs = tokenizer([prompt], return_tensors="pt").to(model.device)
+outputs = model.generate(
+    **inputs,
+    max_new_tokens=256,
+    temperature=0.7,
+    do_sample=True,
+    pad_token_id=tokenizer.eos_token_id,
+)
+print(tokenizer.decode(outputs[0], skip_special_tokens=True))
+```
+
+### Without Unsloth
+
+If you do not have Unsloth installed, you can load the adapter with PEFT directly:
+
+```python
+from peft import PeftModel
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+import torch
+
+quantization_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_compute_dtype=torch.float16,
+)
+
+base_model = AutoModelForCausalLM.from_pretrained(
+    "meta-llama/Meta-Llama-3-8B",
+    quantization_config=quantization_config,
+    device_map="auto",
+)
+model = PeftModel.from_pretrained(base_model, "hasanfaesal/mental-health-llama3-8b-lora")
+tokenizer = AutoTokenizer.from_pretrained("hasanfaesal/mental-health-llama3-8b-lora")
+```
+
+## Reproducing the Training
 
 ### Prerequisites
+
 - Python 3.9+
-- CUDA-capable GPU (recommended: RTX A4000 or better)
-- `uv` package manager
+- CUDA-capable GPU with at least 16 GB VRAM (tested on RTX A4000)
+- [uv](https://github.com/astral-sh/uv) package manager (recommended) or pip
 
-### Installation
+### Setup
 
-#### Option 1: Using the setup script
 ```bash
-./setup_uv.sh
-```
+git clone https://github.com/hasanfaesal/mental-health-llm.git
+cd mental-health-llm
 
-#### Option 2: Manual setup with uv
-```bash
-# Install dependencies using pyproject.toml (recommended)
+# Install dependencies
 uv sync
+# or: pip install -r requirements.txt
 
-# Or install from requirements.txt
-uv pip install -r requirements.txt
+# Download the dataset
+# See data/README.md for instructions, or download from:
+# https://huggingface.co/datasets/Amod/mental_health_counseling_conversations
+# Place combined_dataset.json in the data/ directory.
 ```
 
-#### Option 3: Legacy pip installation
+### Train
+
 ```bash
-./run_training.sh
-```
+# Quick test run (100 steps)
+python src/train.py
 
-### Training
+# Full training (3 epochs)
+python src/train.py --max_steps -1 --num_train_epochs 3
 
-#### Quick Training (100 steps for testing)
-```bash
-# Activate environment
-source .venv/bin/activate
-
-# Run training
-python3 train_mental_health_llama.py
-```
-
-#### Full Training
-```bash
-python3 train_mental_health_llama.py \
-    --max_steps -1 \
-    --num_train_epochs 3 \
-    --validation_split 0.1
-```
-
-#### Custom Configuration
-```bash
-python3 train_mental_health_llama.py \
+# Custom configuration
+python src/train.py \
     --model_name "unsloth/llama-3-8b-bnb-4bit" \
-    --dataset_path "mental_health_counseling_conversations/combined_dataset.json" \
-    --output_dir "./my_custom_model" \
+    --dataset_path "data/combined_dataset.json" \
+    --output_dir "./mental_health_llama_model" \
     --max_steps 500 \
     --validation_split 0.15 \
     --log_level DEBUG
 ```
 
-## 📊 Performance Optimizations
+### Export to GGUF (for Ollama / llama.cpp)
 
-- **Memory Efficient**: Optimized for 16GB GPUs
-- **4-bit Quantization**: Using bitsandbytes for reduced memory usage
-- **QLoRA**: Low-rank adaptation for parameter-efficient training
-- **Gradient Checkpointing**: Reduces memory at cost of some compute
-- **Optimized Batch Sizes**: Configured for RTX A4000
-
-## 🔧 Configuration
-
-### Model Arguments
-- `--model_name`: Base model to fine-tune
-- `--max_seq_length`: Maximum sequence length (default: 2048)
-
-### Training Arguments
-- `--max_steps`: Maximum training steps (-1 for epoch-based)
-- `--validation_split`: Fraction for validation (default: 0.1)
-- `--learning_rate`: Learning rate (default: 1e-4)
-- `--output_dir`: Directory to save model
-
-### Data Arguments
-- `--dataset_path`: Path to JSON dataset
-- `--max_samples`: Limit samples for testing
-
-## 📁 Project Structure
-
-```
-mhealth/
-├── train_mental_health_llama.py    # Main training script
-├── qlora-train.py                  # Original training script
-├── requirements.txt                # Pip dependencies
-├── pyproject.toml                 # UV/modern Python config
-├── setup_uv.sh                   # Fast UV setup
-├── run_training.sh                # Training launcher
-└── mental_health_counseling_conversations/
-    ├── combined_dataset.json      # Training data
-    └── README.md                  # Dataset documentation
-```
-
-## 🎯 Features
-
-- **Robust Error Handling**: Comprehensive validation and recovery
-- **Advanced Logging**: Detailed progress tracking with timestamps
-- **Checkpoint Management**: Automatic saving and resuming
-- **Validation Support**: Built-in train/validation splitting
-- **Inference Testing**: Automatic model testing after training
-- **Memory Optimization**: Configured for consumer GPUs
-
-## 📈 Monitoring
-
-The script supports multiple monitoring backends:
-- **TensorBoard**: `tensorboard --logdir ./mental_health_llama_model/logs`
-- **Weights & Biases**: Set `WANDB_PROJECT` environment variable
-
-## 🔍 Troubleshooting
-
-### CUDA Out of Memory
-- Reduce `per_device_train_batch_size` to 1
-- Increase `gradient_accumulation_steps`
-- Reduce `max_seq_length`
-
-### Package Installation Issues
 ```bash
-# Clean install with uv
-uv cache clean
-rm -rf .venv
-uv venv
-uv sync
+python src/export_gguf.py
 ```
 
-### Dataset Issues
-The script validates your dataset format. Ensure each line is valid JSON with `Context` and `Response` fields.
+This merges the LoRA adapter with the base model and exports a quantized GGUF file
+(default: `q4_k_m`, ~5 GB) suitable for local inference with Ollama or llama.cpp.
 
-## 📝 License
+## Project Structure
 
-This project follows the mental health dataset license requirements. See `mental_health_counseling_conversations/LICENSE-RAIL-D.txt` for details.
+```
+mental-health-llm/
+├── README.md                 # This file
+├── LICENSE                   # MIT license (code)
+├── pyproject.toml            # Project config and dependencies
+├── requirements.txt          # Pip-compatible dependencies
+├── uv.lock                   # Reproducible dependency resolution
+│
+├── src/                      # Primary source code
+│   ├── train.py              # Main training script (QLoRA + Unsloth)
+│   └── export_gguf.py        # GGUF export utility
+│
+├── scripts/                  # Alternative and utility scripts
+│   ├── qlora_train.py        # Simpler training script variant
+│   ├── qlora_unsloth.py      # Notebook-style Unsloth reference
+│   ├── run_training.sh       # Shell training launcher
+│   └── setup_uv.sh           # UV environment setup
+│
+└── data/                     # Dataset directory
+    ├── README.md             # Download instructions
+    └── LICENSE-RAIL-D.txt    # Dataset license
+```
+
+## Dataset
+
+This project uses the [Mental Health Counseling Conversations](https://huggingface.co/datasets/Amod/mental_health_counseling_conversations)
+dataset by Amod Sahasrabude:
+
+- 3,512 real counseling Q&A pairs from licensed professionals
+- 995 unique questions, each with multiple professional responses
+- Topics: anxiety, depression, trauma, relationships, self-esteem, and more
+- Licensed under RAIL-D (see `data/LICENSE-RAIL-D.txt`)
+
+The dataset is not included in this repository. See `data/README.md` for download
+instructions.
+
+## Limitations and Ethical Considerations
+
+This model is a research prototype and has significant limitations:
+
+- **Not a substitute for professional care.** This model should never be used as a
+  replacement for licensed mental health professionals. It cannot diagnose conditions,
+  prescribe treatment, or handle crisis situations.
+- **Limited training.** The model was trained for 100 steps on a relatively small dataset.
+  Response quality will vary and may include inaccurate or inappropriate content.
+- **No safety filters.** The model does not include built-in safety mechanisms for
+  detecting or responding to crisis situations (e.g., suicidal ideation).
+- **Bias.** The training data comes from specific counseling platforms and may not
+  represent the full diversity of mental health experiences, cultural contexts, or
+  therapeutic approaches.
+- **Hallucination risk.** Like all language models, this model can generate plausible but
+  factually incorrect or clinically inappropriate responses.
+
+If you or someone you know is in crisis, please contact a professional service:
+- **988 Suicide and Crisis Lifeline** (US): Call or text 988
+- **Crisis Text Line**: Text HOME to 741741
+
+## License
+
+The project code is released under the [MIT License](LICENSE). The training dataset is
+licensed separately under RAIL-D (see `data/LICENSE-RAIL-D.txt`).
+
+## Acknowledgments
+
+- [Unsloth](https://github.com/unslothai/unsloth) for memory-efficient fine-tuning
+- [Amod Sahasrabude](https://huggingface.co/datasets/Amod/mental_health_counseling_conversations) for the counseling dataset
+- [Meta AI](https://ai.meta.com/llama/) for the LLaMA 3 base model

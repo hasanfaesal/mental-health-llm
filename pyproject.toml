@@ -1,7 +1,8 @@
 [project]
 name = "mental-health-llama-training"
 version = "0.1.0"
-description = "Fine-tuning Llama-3-8B on Mental Health Counseling Dataset using QLoRA"
+description = "Fine-tuning Llama-3-8B on Mental Health Counseling Dataset using QLoRA and Unsloth"
+license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
@@ -63,10 +64,10 @@ dev = [
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["."]
+packages = ["src"]
 include = [
-    "*.py",
-    "mental_health_counseling_conversations/*.json",
+    "src/*.py",
+    "scripts/*.py",
     "README.md",
     "requirements.txt"
 ]

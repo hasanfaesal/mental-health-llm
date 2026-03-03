@@ -1,48 +1,48 @@
-# Large model files
+# Model files
 *.gguf
 *.safetensors
 *.bin
 *.pth
 
-# Model directories
+# Model output directories
 mental_health_llama_model/
 gguf_model/
 llama.cpp/
 unsloth_compiled_cache/
+lora_model/
+outputs/
+output/
 
-# Python virtual environment
+# Python
 .venv/
 venv/
 *.pyc
 __pycache__/
 
-# Training logs (optional - remove this line if you want to commit logs)
-# *.log
+# Training logs and runs
+*.log
+runs/
+logs/
 
-# UV lock file (optional - keep if you want reproducible builds)
-# uv.lock
+# Checkpoints
+checkpoints/
+checkpoint-*/
+
+# Dataset (downloaded separately -- see data/README.md)
+data/*.json
+data/*.csv
+data/*.parquet
 
 # Hugging Face cache
 .cache/
 
-# Large datasets (adjust path as needed)
-mental_health_counseling_conversations/*.csv
-mental_health_counseling_conversations/*.json
-
-# Logs and runs
-*.log
-runs/
-output/
-outputs/
-logs/
-
-# Checkpoints (if you save outside mental_health_llama_model/)
-checkpoints/
-checkpoint-*/
-
-# Env files
+# Environment
 .env
 .env.*
 
 # Notebooks
 .ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db

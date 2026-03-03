@@ -28,5 +28,5 @@ fi
 echo "Dependencies installed successfully!"
 echo "====================================="
 echo "To activate environment: source .venv/bin/activate"
-echo "To run training: ./run_training.sh"
+echo "To run training: ./scripts/run_training.sh"
 echo "====================================="
